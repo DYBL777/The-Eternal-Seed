@@ -9,7 +9,7 @@ The Eternal Seed is a mechanism for permanent capital retention:
 - A percentage of capital flows locked during active operation
 - Locked capital earns yield, which compounds
 - No withdrawal during operation — dormancy timelock protects users if the system ends
-- The floor can only rise
+- The floor can only rise (under normal conditions)
 
 ## Why It Matters
 
