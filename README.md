@@ -60,7 +60,6 @@ DYBL Foundation
 ## Related
 
 - [DYBL-v1](https://github.com/DYBL777/DYBL-v1) — Lettery implementation using SeedEngine
-- [Implications Paper](https://github.com/DYBL777/DYBL-v1/docs/IMPLICATIONS.md)
 
 ---
 
