@@ -1,4 +1,4 @@
-# 🌱 SeedEngine
+# 🌱 The Eternal Seed (TES)
 
 **A payment primitive where capital locks, yield compounds, and the floor rises.**
 
