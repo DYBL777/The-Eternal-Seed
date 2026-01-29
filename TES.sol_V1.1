@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
  * ║                                                                           ║
- * ║                           SEED ENGINE v1.0                                ║
+ * ║                          Eternal Seed v1.1                                ║
  * ║                                                                           ║
  * ║                    Permanent Capital Retention Primitive                  ║
  * ║                                                                           ║
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  *
  * @title SeedEngine
- * @author | DYBL Foundation
+ * @author DYBL Foundation
  * @notice Core implementation and specification of the Eternal Seed primitive
  * 
  * @dev LICENSE: Business Source License 1.1
@@ -24,6 +24,12 @@ pragma solidity ^0.8.20;
  *      until the Change Date. After the Change Date, this code converts to MIT license.
  *      
  *      Contact: dybl7@proton.me
+ *
+ * @dev V1.1 Changes:
+ *      - Fixed internal function calls (removed unnecessary `this.` prefix)
+ *      - Removed redundant getter functions (public variables have auto-getters)
+ *      - Added MIN_DEPOSIT to prevent dust/griefing attacks
+ *      - Updated Variant 8 documentation to reflect PPL development status
  *
  * ═══════════════════════════════════════════════════════════════════════════════
  *                              ETERNAL SEED PRIMITIVE
@@ -49,7 +55,7 @@ pragma solidity ^0.8.20;
  * property until the Change Date.
  *
  * ───────────────────────────────────────────────────────────────────────────────
- * VARIANT 1: FIXED SEED
+ * VARIANT 1: FIXED SEED [IMPLEMENTED - This Contract]
  * ───────────────────────────────────────────────────────────────────────────────
  * @dev A fixed percentage of capital flows locked during active operation.
  * 
@@ -67,8 +73,6 @@ pragma solidity ^0.8.20;
  * - Dormancy period triggers user withdrawal rights
  * 
  * Use Cases: Lotteries, savings products, prize pools
- * 
- * Implementation: SeedFixed.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 2: FLEXIBLE SEED
@@ -94,8 +98,6 @@ pragma solidity ^0.8.20;
  * - absoluteFloor always maintained
  * 
  * Use Cases: Volatile tokens, assets needing emergency buffers
- * 
- * Implementation: SeedFlexible.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 3: ROLLING SEED
@@ -121,8 +123,6 @@ pragma solidity ^0.8.20;
  * - Custom oracles for specific metrics
  * 
  * Use Cases: Adaptive stability mechanisms, economic-responsive products
- * 
- * Implementation: SeedRolling.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 4: COUNTER-CYCLICAL SEED
@@ -148,8 +148,6 @@ pragma solidity ^0.8.20;
  * - Liquidity metrics fall below threshold
  * 
  * Use Cases: DeFi stability mechanisms, counter-cyclical reserves
- * 
- * Implementation: SeedCounterCyclical.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 5: CAPPED SEED
@@ -177,8 +175,6 @@ pragma solidity ^0.8.20;
  * - User rewards
  * 
  * Use Cases: Sustainable growth systems, charitable mechanisms
- * 
- * Implementation: SeedCapped.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 6: TIERED SEED
@@ -203,8 +199,6 @@ pragma solidity ^0.8.20;
  * - Enables progressive or regressive seed structures
  * 
  * Use Cases: Loyalty rewards, institutional products, progressive systems
- * 
- * Implementation: SeedTiered.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 7: YIELD-SPLIT SEED
@@ -236,19 +230,26 @@ pragma solidity ^0.8.20;
  * - 20% to treasury (operations)
  * 
  * Use Cases: Balanced growth/reward systems, saver products
- * 
- * Implementation: SeedYieldSplit.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
- * VARIANT 8: INSURANCE SEED
+ * VARIANT 8: INSURANCE SEED [IN DEVELOPMENT - Protocol Protection Layer (PPL)]
  * ───────────────────────────────────────────────────────────────────────────────
  * @dev Seed acts as insurance pool, can pay out during black swan events.
+ *      
+ *      STATUS: Active development as "Protocol Protection Layer" (PPL)
+ *      See: ProtocolProtectionLayer.sol for full implementation
+ *      
+ *      Why "Protection" not "Insurance":
+ *      - Avoids regulatory complexity of "insurance" label
+ *      - Embedded compensation model (no premiums, no committees)
+ *      - Protection is automatic, not opt-in
  * 
  * Parameters:
  * - seedPercent: Percentage locked per transaction
- * - claimTriggers: Conditions that enable claims
+ * - claimTriggers: Conditions that enable claims (oracle + multisig confirmation)
  * - maxClaimPercent: Maximum percentage claimable per event
  * - rebuildRate: Rate at which seed rebuilds post-claim
+ * - cooldownPeriod: Minimum time between claim events
  * 
  * Claim Triggers:
  * - Smart contract exploit detected
@@ -256,16 +257,20 @@ pragma solidity ^0.8.20;
  * - Governance-approved emergency
  * - Protocol insolvency event
  * 
+ * Security Architecture (implemented in PPL):
+ * - Two-step trigger: Oracle proposes → Multisig confirms within window
+ * - Front-run protection: Deposits halted during trigger evaluation
+ * - Block-anchored snapshots: Must deposit BEFORE trigger to claim
+ * - Cooldown between claims: Prevents cascade drain attacks
+ * 
  * Behaviour:
- * - Seed accumulates as insurance reserve
+ * - Seed accumulates as protection reserve
  * - Normal operation: no claims, seed grows
  * - Trigger event: claims processed up to maxClaimPercent
  * - Post-claim: seed rebuilds via continued contributions
  * - Provides user protection against catastrophic events
  * 
- * Use Cases: DeFi insurance, protocol protection, user safety nets
- * 
- * Implementation: SeedInsurance.sol
+ * Use Cases: DeFi protocol protection, user safety nets, embedded compensation
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 9: BURNING SEED (DEFLATIONARY)
@@ -292,8 +297,6 @@ pragma solidity ^0.8.20;
  * - minSeedFloor always maintained
  * 
  * Use Cases: Deflationary tokens, supply management, price support
- * 
- * Implementation: SeedBurning.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 10: TIME-DECAY SEED
@@ -320,8 +323,6 @@ pragma solidity ^0.8.20;
  * - absoluteFloor of 50% never released
  * 
  * Use Cases: Long-term endowments, generational products, pension analogues
- * 
- * Implementation: SeedTimeDecay.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 11: MATCHED SEED
@@ -348,8 +349,6 @@ pragma solidity ^0.8.20;
  * - Overflow from capped seeds
  * 
  * Use Cases: Savings incentives, onboarding rewards, partnership programs
- * 
- * Implementation: SeedMatched.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 12: GOVERNANCE SEED
@@ -376,8 +375,6 @@ pragma solidity ^0.8.20;
  * - Emergency actions
  * 
  * Use Cases: DAO governance, protocol ownership, aligned incentives
- * 
- * Implementation: SeedGovernance.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 13: COMPOUND-ONLY SEED
@@ -403,8 +400,6 @@ pragma solidity ^0.8.20;
  * - Migration from other seed
  * 
  * Use Cases: Non-extractive models, treasury-funded stability, grants
- * 
- * Implementation: SeedCompoundOnly.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 14: EMERGENCY RELEASE SEED
@@ -433,8 +428,6 @@ pragma solidity ^0.8.20;
  * - Governance-approved emergency
  * 
  * Use Cases: Protocol safety, regulatory compliance, user protection
- * 
- * Implementation: SeedEmergencyRelease.sol
  *
  * ───────────────────────────────────────────────────────────────────────────────
  * VARIANT 15: CHARITABLE SEED
@@ -467,8 +460,33 @@ pragma solidity ^0.8.20;
  * - Third-party attestation
  * 
  * Use Cases: Perpetual charitable giving, impact products, ESG compliance
+ *
+ * ───────────────────────────────────────────────────────────────────────────────
+ * VARIANT 16: BREATHING SEED [SPECIFICATION ONLY]
+ * ───────────────────────────────────────────────────────────────────────────────
+ * @dev DeFi-native variant where principal stays liquid, seed grows from yield.
+ *      Designed for users who want the mechanism exposed and liquidity preserved.
  * 
- * Implementation: SeedCharitable.sol
+ * Parameters:
+ * - yieldSeedPercent: Percentage of yield directed to seed (not principal)
+ * - breathingZones: Thresholds that trigger inhale/exhale behaviour
+ * - loyaltyMultiplier: Bonus for long-term participants
+ * 
+ * Behaviour:
+ * - User deposits principal (remains withdrawable)
+ * - Yield split: portion to user, portion to seed
+ * - "Inhale": During stress, more yield → seed (protection builds)
+ * - "Exhale": During stability, seed yield → loyal users (rewards)
+ * - Principal never locked, only yield funds the mechanism
+ * 
+ * Key Difference from Other Variants:
+ * - No principal retention (user funds stay liquid)
+ * - Seed funded entirely from yield diversion
+ * - Slower seed growth, but no user capital lockup
+ * 
+ * Use Cases: DeFi yield wrappers, liquid staking with protection, yield vaults
+ * 
+ * Status: Specification only. See separate Breathing Seed paper for details.
  *
  * ═══════════════════════════════════════════════════════════════════════════════
  *                              IMPLEMENTATION NOTES
@@ -481,14 +499,15 @@ pragma solidity ^0.8.20;
  * - ISeedEmergency: Emergency functions interface
  * 
  * Yield Sources:
- * - Aave v3
- * - Compound v3
+ * - Aave V3
+ * - Compound V3
  * - Custom yield strategies
  * - Multi-protocol diversification
  * 
  * Oracle Integration:
  * - Chainlink Price Feeds
  * - Chainlink Automation
+ * - Chainlink VRF (for lottery variants)
  * - Truflation Economic Data
  * - Custom oracles
  * 
@@ -498,6 +517,8 @@ pragma solidity ^0.8.20;
  * - Governance timelock on parameter changes
  * - Dormancy timelock for user protection
  * - Multi-sig for emergency functions
+ * - Front-run protection for claims (PPL)
+ * - Minimum deposit requirements to prevent griefing
  *
  * ═══════════════════════════════════════════════════════════════════════════════
  *                              CONTACT & LICENSING
@@ -517,6 +538,7 @@ pragma solidity ^0.8.20;
  */
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -526,9 +548,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @notice Core interface for all seed variants
  */
 interface ISeed {
-    /// @notice Returns current seed balance
-    function getSeedBalance() external view returns (uint256);
-    
     /// @notice Returns seed percentage for a given context
     function getSeedPercent(address user, uint256 amount) external view returns (uint256);
     
@@ -578,6 +597,9 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
     
     /// @notice Yield source address (e.g., Aave pool)
     address public yieldSource;
+    
+    /// @notice Minimum deposit to prevent dust/griefing attacks
+    uint256 public immutable minDeposit;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTANTS
@@ -588,6 +610,25 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
     
     /// @notice Minimum dormancy period (90 days)
     uint256 public constant MIN_DORMANCY_PERIOD = 90 days;
+
+    /*//////////////////////////////////////////////////////////////
+                               ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Thrown when deposit amount is below minimum
+    error DepositTooSmall();
+    
+    /// @notice Thrown when system is not dormant
+    error NotDormant();
+    
+    /// @notice Thrown when withdrawal exceeds seed balance
+    error InsufficientSeed();
+    
+    /// @notice Thrown when address is zero
+    error InvalidAddress();
+    
+    /// @notice Thrown when amount is zero
+    error ZeroAmount();
 
     /*//////////////////////////////////////////////////////////////
                              CONSTRUCTOR
@@ -615,6 +656,10 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
         dormancyPeriod = _dormancyPeriod;
         yieldSource = _yieldSource;
         lastActivityTimestamp = block.timestamp;
+        
+        // Derive minDeposit from token decimals (1 full token)
+        uint8 decimals = IERC20Metadata(_token).decimals();
+        minDeposit = 10 ** decimals;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -627,7 +672,7 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
      * @dev Called internally when processing transactions
      */
     function depositToSeed(uint256 amount) external nonReentrant {
-        require(amount > 0, "Zero amount");
+        if (amount < minDeposit) revert DepositTooSmall();
         
         token.safeTransferFrom(msg.sender, address(this), amount);
         
@@ -663,23 +708,27 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc ISeed
-    function getSeedBalance() external view returns (uint256) {
-        return seedBalance;
-    }
-
-    /// @inheritdoc ISeed
     function getSeedPercent(address, uint256) external view returns (uint256) {
         return seedPercentBps;
     }
 
     /// @inheritdoc ISeed
     function isLocked() external view returns (bool) {
-        (bool dormant,) = this.getDormancyStatus();
+        (bool dormant,) = _getDormancyStatus();
         return !dormant;
     }
 
     /// @inheritdoc ISeed
     function getDormancyStatus() external view returns (bool isDormant, uint256 dormantSince) {
+        return _getDormancyStatus();
+    }
+
+    /**
+     * @notice Internal dormancy check
+     * @return isDormant Whether system is dormant
+     * @return dormantSince Timestamp when dormancy began (0 if not dormant)
+     */
+    function _getDormancyStatus() internal view returns (bool isDormant, uint256 dormantSince) {
         uint256 timeSinceActivity = block.timestamp - lastActivityTimestamp;
         isDormant = timeSinceActivity >= dormancyPeriod;
         dormantSince = isDormant ? lastActivityTimestamp + dormancyPeriod : 0;
@@ -697,6 +746,7 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
     function _depositToYield(uint256 amount) internal virtual {
         // Implementation depends on yield source (Aave, Compound, etc.)
         // Override in derived contracts
+        (amount); // Silence unused variable warning
     }
 
     /**
@@ -721,10 +771,10 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
      * @dev Only callable when system is dormant
      */
     function dormancyWithdraw(address to, uint256 amount) external nonReentrant onlyOwner {
-        (bool isDormant,) = this.getDormancyStatus();
-        require(isDormant, "System not dormant");
-        require(amount <= seedBalance, "Insufficient seed");
-        require(to != address(0), "Invalid recipient");
+        (bool isDormant,) = _getDormancyStatus();
+        if (!isDormant) revert NotDormant();
+        if (amount > seedBalance) revert InsufficientSeed();
+        if (to == address(0)) revert InvalidAddress();
         
         seedBalance -= amount;
         
@@ -742,5 +792,6 @@ contract SeedEngine is ISeed, ReentrancyGuard, Ownable {
     function _withdrawFromYield(uint256 amount) internal virtual {
         // Implementation depends on yield source (Aave, Compound, etc.)
         // Override in derived contracts
+        (amount); // Silence unused variable warning
     }
 }
