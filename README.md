@@ -1,4 +1,14 @@
-# 🌱 The Eternal Seed (TES)
+> **Superseded.** This repository is no longer maintained. The current, audited
+> implementation of these primitives lives at
+> [DYBL777/dybl-primitives](https://github.com/DYBL777/dybl-primitives).
+>
+> The reference contract in this repo (`SeedEngine.sol`) has known accounting
+> issues: deposits are only partially credited to the tracked balance, and the
+> dormancy timer can be reset indefinitely by any caller. Full details in the
+> new repo's audit history. This repo is kept for historical record only and
+> should not be used as a reference or integrated into anything new.
+
+---# 🌱 The Eternal Seed (TES)
 
 **A payment primitive where capital locks, yield compounds, and the floor rises.**
 
